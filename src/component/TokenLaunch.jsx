@@ -39,17 +39,25 @@ function TokenLaunch() {
                                           // mint.PublicKey , decimals, mintAuthority, freezeAuth , programId
           createInitializeMint2Instruction(mintKeyPair.publicKey, 9, wallet.publicKey,wallet.publicKey, TOKEN_PROGRAM_ID)
       );
+     
+      // const signature = await wallet.sendTransaction(transaction, connection,{
+      //   signers:[mintKeyPair]
+      // });
+      // await connection.confirmTransaction(signature, 'finalized');
+
+      
+
+      // As we don't have access to user private key so we can't use create mint function directly,
+      // then we use partial sign to sign the transaction by keyPair of mint acc and send 
+      // transaction to user wallet to sign it with his private key
       transaction.feePayer = wallet.publicKey;
       transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-          console.log("Transaction before signing:", transaction);
-      const signedTransaction = await wallet.signTransaction(transaction);
-      signedTransaction.partialSign(mintKeyPair);
-      console.log("Signed transaction:", signedTransaction);
-
-      await sendAndConfirmTransaction(connection, signedTransaction, [mintKeyPair], {commitment:'finalized'});
-          console.log(`Token mint created at ${mintKeyPair.publicKey.toBase58()}`);
-      const balAfterDeduction = await connection.getBalance(wallet.publicKey);
-          console.log(`balance after deduction->  ${balAfterDeduction} `);
+      transaction.partialSign(mintKeyPair);
+      
+      await wallet.sendTransaction(transaction, connection);
+        console.log("Token mint created at " + mintKeyPair.publicKey.toBase58());
+        const balAfterDeduction = await connection.getBalance(wallet.publicKey);
+        console.log(`balance after deduction->  ${balAfterDeduction} `);
     }
     catch(err){
       console.log(err)
